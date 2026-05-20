@@ -15,7 +15,7 @@ const db = new sqlDb.Database(dbPath, (err) => {
 
 function createTables() {
   db.serialize(() => {
-    // Create the leads table with explicit column types and check constraints
+    
     db.run(`
       CREATE TABLE IF NOT EXISTS leads (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,13 +32,13 @@ function createTables() {
       )
     `);
 
-    // Performance Indexes for frequent searching and status lookups
+    
     db.run(`CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_leads_location ON leads(location)`);
   });
 }
 
-// Simple helper utilities to let us use modern async/await syntax in our routes
+
 const query = (sql, params = []) => {
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
