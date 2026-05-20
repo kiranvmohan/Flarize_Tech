@@ -1,86 +1,95 @@
-import React from 'react'
+import React from 'react';
 
-function Dashboard() {
+function Dashboard({ leads, analytics, statusFilter, setStatusFilter, locationSearch, setLocationSearch, onRefresh }) {
+  
+
+  const handleStatusChange = async (id, newStatus) => {
+    await fetch(`http://localhost:5000/api/leads/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    onRefresh(); 
+  };
+
+
+  const handleDelete = async (id) => {
+  
+    if (window.confirm("Are you sure you want to delete this lead?")) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/leads/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (res.ok) {
+          onRefresh();
+        } else {
+          alert("Failed to delete lead from server.");
+        }
+      } catch (err) {
+        console.error("Delete error:", err);
+      }
+    }
+  };
+
   return (
-   <>
-
-   <div className="space-y-6">
-      
+    <div className="space-y-6">
+   
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      
-        <div className="bg-white p-4 rounded-md border border-gray-200 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Leads</p>
-          <p className="text-2xl font-bold mt-1 text-gray-900">12</p>
+        <div className="bg-white p-4 border rounded shadow-sm">
+          <p className="text-xs font-bold text-gray-400 uppercase">Total Leads</p>
+          <p className="text-2xl font-bold mt-1">{analytics.totalLeads}</p>
         </div>
-       
-        <div className="bg-white p-4 rounded-md border border-gray-200 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Conversion Rate</p>
-          <p className="text-2xl font-bold mt-1 text-green-600">25.0%</p>
+        <div className="bg-white p-4 border rounded shadow-sm">
+          <p className="text-xs font-bold text-gray-400 uppercase">Conversion Rate</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">{analytics.conversionRate}</p>
         </div>
-     
-        <div className="bg-white p-4 rounded-md border border-gray-200 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Deals Closed (Won)</p>
-          <p className="text-2xl font-bold mt-1 text-blue-600">3</p>
+        <div className="bg-white p-4 border rounded shadow-sm">
+          <p className="text-xs font-bold text-gray-400 uppercase">Deals Won</p>
+          <p className="text-2xl font-bold text-blue-600 mt-1">{analytics.wonLeads}</p>
         </div>
       </div>
 
    
-      <div className="bg-white p-4 rounded-md border border-gray-200 shadow-sm flex flex-col sm:flex-row gap-3">
-        <div className="flex-1">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Search City Location</label>
-          <input 
-            type="text" 
-            placeholder="Type city name..." 
-            className="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" 
-          />
-        </div>
-        <div className="w-full sm:w-48">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Filter Workflow Stage</label>
-          <select className="w-full p-2 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-            <option value="">All Statuses</option>
-            <option value="New Lead">New Lead</option>
-            <option value="Contacted">Contacted</option>
-            <option value="Site Visit Scheduled">Site Visit Scheduled</option>
-            <option value="Proposal Sent">Proposal Sent</option>
-            <option value="Won">Won</option>
-            <option value="Lost">Lost</option>
-          </select>
-        </div>
+      <div className="bg-white p-4 border rounded shadow-sm flex flex-col sm:flex-row gap-4">
+        <input 
+          type="text" placeholder="Search by city..." value={locationSearch} 
+          onChange={(e) => setLocationSearch(e.target.value)}
+          className="flex-1 p-2 border rounded text-sm" 
+        />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="p-2 border rounded text-sm">
+          <option value="">All Statuses</option>
+          <option value="New Lead">New Lead</option>
+          <option value="Contacted">Contacted</option>
+          <option value="Site Visit Scheduled">Site Visit Scheduled</option>
+          <option value="Proposal Sent">Proposal Sent</option>
+          <option value="Won">Won</option>
+          <option value="Lost">Lost</option>
+        </select>
       </div>
 
-     
-      <div className="bg-white rounded-md border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-gray-100 text-xs font-bold uppercase text-gray-600 border-b border-gray-200">
-              <tr>
-                <th className="p-3">Client Information</th>
-                <th className="p-3">City Location</th>
-                <th className="p-3">Requirements</th>
-                <th className="p-3">Workflow Status</th>
-                <th className="p-3 text-right">Advance Stage</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white text-gray-700">
-              
-            
-              <tr className="hover:bg-gray-50 transition-colors">
+      
+      <div className="bg-white border rounded shadow-sm overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-gray-100 uppercase text-xs font-bold text-gray-600 border-b">
+            <tr>
+              <th className="p-3">Customer Info</th>
+              <th className="p-3">Location</th>
+              <th className="p-3">System Size</th>
+              <th className="p-3">Status</th>
+              <th className="p-3">Update Status</th>
+              <th className="p-3 text-center">Actions</th> {/* Added Actions Column Header */}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {leads.map((lead) => (
+              <tr key={lead.id} className="hover:bg-gray-50">
+                <td className="p-3 font-bold">{lead.full_name}<div className="text-xs font-normal text-gray-500">{lead.email}</div></td>
+                <td className="p-3">{lead.location}</td>
+                <td className="p-3">{lead.system_size} kW ({lead.property_type})</td>
+                <td className="p-3"><span className="p-1 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">{lead.status}</span></td>
                 <td className="p-3">
-                  <div className="font-bold text-gray-900">Rahul Nair</div>
-                  <div className="text-xs text-gray-500">rahul@example.com • 9876543210</div>
-                </td>
-                <td className="p-3 font-medium text-gray-600">Palakkad</td>
-                <td className="p-3">
-                  <span className="font-semibold text-gray-900">12 kW</span>
-                  <div className="text-xs text-gray-400">Residential • Website</div>
-                </td>
-                <td className="p-3">
-                  <span className="inline-block px-2 py-0.5 text-xs font-bold rounded bg-yellow-100 text-yellow-800">
-                    New Lead
-                  </span>
-                </td>
-                <td className="p-3 text-right">
-                  <select className="p-1.5 border border-gray-300 rounded text-xs bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                  <select value={lead.status} onChange={(e) => handleStatusChange(lead.id, e.target.value)} className="p-1 border rounded text-xs">
                     <option value="New Lead">New Lead</option>
                     <option value="Contacted">Contacted</option>
                     <option value="Site Visit Scheduled">Site Visit Scheduled</option>
@@ -89,16 +98,22 @@ function Dashboard() {
                     <option value="Lost">Lost</option>
                   </select>
                 </td>
+               
+                <td className="p-3 text-center">
+                  <button 
+                    onClick={() => handleDelete(lead.id)}
+                    className="px-2 py-1 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
-
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
-
     </div>
-   </>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;

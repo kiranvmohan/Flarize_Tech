@@ -138,6 +138,19 @@ app.get('/api/analytics', async (req, res) => {
     }
 })
 
+app.delete('/api/leads/:id', (req, res) => {
+  const { id } = req.params;
+  const sql = 'DELETE FROM leads WHERE id = ?';
+
+  db.run(sql, id, function(err) {
+    if (err) {
+      console.error(err.message);
+      return res.status(500).json({ error: "Failed to delete lead from database" });
+    }
+    res.json({ message: "Lead successfully removed" });
+  });
+});
+
 app.listen(PORT,()=>{
     console.log(`server is running in the port ${PORT}`)
 });
